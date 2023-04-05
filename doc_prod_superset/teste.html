@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link
+      rel="shortcut icon"
+      href="https://plusoft.com/wp-content/themes/plusoft/favicon.png"
+      type="image/x-icon"
+    />
+
+    <title>Teste SuperSet</title>
+
+    <style>
+      #superset-container iframe {
+        height: 97vh;
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="superset-container"></div>
+
+    <script src="https://unpkg.com/@superset-ui/embedded-sdk"></script>
+    <script>
+      supersetEmbeddedSdk.embedDashboard({
+        id: "abcda749-6fd9-4a31-b0d7-ec40ef175b0e",
+        supersetDomain: "http://localhost:8088",
+        mountPoint: document.getElementById("superset-container"),
+        fetchGuestToken: () => getTokenLocal(),
+        dashboardUiConfig: { hideTitle: true }
+      });
+      async function getTokenLocal() {
+        const adData = {
+          username: "admin",
+          password: "admin",
+          provider: "db",
+          refresh: false
+        };
+        const resp = await fetch(
+          "http://localhost:8088/api/v1/security/login",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(adData)
+          }
+        );
+
+        const token = await resp.json();
+
+        console.log("access token here");
+        console.log(token);
+
+        const userData = {
+          user: {
+            username: "myAppUser",
+            first_name: "MyApp User",
+            last_name: "MyApp User"
+          },
+          rls: [],
+          resources: [
+            {
+              type: "dashboard",
+              id: "abcda749-6fd9-4a31-b0d7-ec40ef175b0e"
+            }
+          ]
+        };
+
+        try {
+          var data = await fetch(
+            "http://localhost:8088/api/v1/security/guest_token/",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token.access_token}`
+              },
+              body: JSON.stringify(userData)
+            }
+          );
+          console.log("guest token here antes");
+          const tokenUser = await data.json();
+          console.log("guest token here depois", tokenUser);
+          return tokenUser.token;
+        } catch (e) {
+          console.error(e.message);
+          console.error(e);
+          return e;
+        }
+      }
+    </script>
+  </body>
+</html>
